@@ -1,4 +1,5 @@
 
+use std::sync::Arc;
 use std::{time::{Instant}};
 use pollster::FutureExt;
 use winit::{
@@ -18,12 +19,12 @@ fn main() {
 
     let event_loop = EventLoop::new().unwrap();
 
-    let window = Window::new(&event_loop).unwrap();
+    let window = Arc::new(Window::new(&event_loop).unwrap());
     let _ = window.request_inner_size(PhysicalSize::<u32>::from((1200, 1200)));
     window.set_title("WgFx");
 
 
-    let (gx, surface) = unsafe {Wgx::new(Some(&window), features!(), limits!{})}.block_on().unwrap();
+    let (gx, surface) = Wgx::new(Some(window.clone()), features!(), limits!{}).block_on().unwrap();
     let mut target = SurfaceTarget::new(&gx, surface.unwrap(), (1200, 1200), MSAA, DEPTH_TESTING).unwrap();
 
 

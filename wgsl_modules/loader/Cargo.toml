@@ -11,4 +11,4 @@ name = "wgsl_modules_loader"
 [dependencies]
 lazy_static = "1"
 regex-lite = { version = "0.1" }
-naga = { version = "0.14", features = ["wgsl-in", "span", "validate"] }
+naga = { version = "0.19", features = ["wgsl-in"] }

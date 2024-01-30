@@ -1,6 +1,6 @@
 
 use winit::keyboard::KeyCode;
-use wgx::{*, cgmath::*};
+use wgx::{*, math::*};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum InputKey {
@@ -43,31 +43,31 @@ pub struct WorldView {
     pub da: f32, // delta angle
     pub df: f32, // delta zoom
 
-    pub fov: FovProjection<f32>,
+    pub fov: FovProjection,
 
-    pub rotation: Matrix4::<f32>,
-    pub scene: Matrix4::<f32>,
-    pub objects: Matrix4::<f32>,
+    pub rotation: Mat4,
+    pub scene: Mat4,
+    pub objects: Mat4,
 
-    pub clip_matrix: Matrix4::<f32>,
+    pub clip_matrix: Mat4,
     pub clip_buffer: wgpu::Buffer,
 
-    pub light_matrix: Matrix4::<f32>,
+    pub light_matrix: Mat4,
     pub light_buffer: wgpu::Buffer,
 }
 
 impl WorldView {
 
-    pub fn new(gx: &impl WgxDevice, ds: f32, da: f32, df: f32, fov: FovProjection<f32>) -> Self {
+    pub fn new(gx: &impl WgxDevice, ds: f32, da: f32, df: f32, fov: FovProjection) -> Self {
         let clip_matrix = fov.projection * fov.translation;
         Self {
             ds, da, df, fov,
-            rotation: Matrix4::<f32>::identity(),
-            scene: Matrix4::<f32>::identity(),
-            objects: Matrix4::<f32>::identity(),
+            rotation: Mat4::IDENTITY,
+            scene: Mat4::IDENTITY,
+            objects: Mat4::IDENTITY,
             clip_buffer: gx.buffer(BufUse::UNIFORM | BufUse::COPY_DST, 64, false),
             clip_matrix,
-            light_matrix: Matrix4::<f32>::identity(),
+            light_matrix: Mat4::IDENTITY,
             light_buffer: gx.buffer(BufUse::UNIFORM | BufUse::COPY_DST, 64, false),
         }
     }
@@ -85,28 +85,28 @@ impl WorldView {
     }
 
     pub fn translate(&mut self, translation: (f32, f32, f32)) {
-        apply!(self.scene, Matrix4::from_translation(translation.into()));
+        apply!(self.scene, Mat4::from_translation(translation.into()));
     }
 
     pub fn rotate_x(&mut self, angle_deg: f32) {
-        apply!(self.rotation, Matrix4::from_angle_x(Deg(angle_deg)));
+        apply!(self.rotation, Mat4::from_rotation_x(deg(angle_deg)));
     }
 
     pub fn rotate_y(&mut self, angle_deg: f32) {
-        apply!(self.rotation, Matrix4::from_angle_y(Deg(angle_deg)));
+        apply!(self.rotation, Mat4::from_rotation_y(deg(angle_deg)));
     }
 
     pub fn rotate_z(&mut self, angle_deg: f32) {
-        apply!(self.rotation, Matrix4::from_angle_z(Deg(angle_deg)));
+        apply!(self.rotation, Mat4::from_rotation_z(deg(angle_deg)));
     }
 
     pub fn scale(&mut self, factor: f32) {
-        apply!(self.rotation, Matrix4::from_scale(factor));
+        apply!(self.rotation, Mat4::from_uniform_scale(factor));
     }
 
     pub fn reset_scene_rotation(&mut self) {
-        self.scene = Matrix4::identity();
-        self.rotation = Matrix4::identity();
+        self.scene = Mat4::IDENTITY;
+        self.rotation = Mat4::IDENTITY;
     }
 
     pub fn input(&mut self, key: InputKey) {

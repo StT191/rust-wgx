@@ -112,7 +112,7 @@ impl RenderAttachable for TextureLot {
 #[derive(Debug)]
 pub struct SurfaceTarget {
     pub config: wgpu::SurfaceConfiguration,
-    pub surface: wgpu::Surface,
+    pub surface: wgpu::Surface<'static>,
     pub view_format: TextureFormat,
     pub msaa: u32,
     pub msaa_opt: Option<TextureLot>,
@@ -158,13 +158,14 @@ const DEFAULT_CONFIG: wgpu::SurfaceConfiguration = wgpu::SurfaceConfiguration {
     format: DEFAULT_SRGB, width: 0, height: 0,
     present_mode: Prs::Mailbox,
     alpha_mode: wgpu::CompositeAlphaMode::Auto,
+    desired_maximum_frame_latency: 2,
     view_formats: Vec::new(),
 };
 
 
 impl SurfaceTarget {
 
-    pub fn new(gx:&Wgx, surface:wgpu::Surface, size:(u32, u32), msaa:u32, depth_testing:bool) -> Res<Self>
+    pub fn new(gx:&Wgx, surface:wgpu::Surface<'static>, size:(u32, u32), msaa:u32, depth_testing:bool) -> Res<Self>
     {
         let mut config = DEFAULT_CONFIG.clone();
         config.width = size.0;

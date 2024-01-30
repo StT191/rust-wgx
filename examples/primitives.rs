@@ -1,4 +1,5 @@
 
+use std::sync::Arc;
 use std::{time::{Instant}};
 use pollster::FutureExt;
 use winit::{
@@ -18,20 +19,20 @@ fn main() {
 
     let event_loop = EventLoop::new().unwrap();
 
-    let window = Window::new(&event_loop).unwrap();
+    let window = Arc::new(Window::new(&event_loop).unwrap());
 
     // size
     let sf = window.scale_factor() as f32;
 
     let width = (sf * 800.0) as u32;
-    let heigh = (sf * 600.0) as u32;
+    let height = (sf * 600.0) as u32;
 
-    let _ = window.request_inner_size(PhysicalSize::<u32>::from((width, heigh)));
+    let _ = window.request_inner_size(PhysicalSize::<u32>::from((width, height)));
     window.set_title("WgFx");
 
 
-    let (gx, surface) = unsafe {Wgx::new(Some(&window), features!(), limits!{})}.block_on().unwrap();
-    let mut target = SurfaceTarget::new(&gx, surface.unwrap(), (width, heigh), MSAA, DEPTH_TESTING).unwrap();
+    let (gx, surface) = Wgx::new(Some(window.clone()), features!(), limits!{}).block_on().unwrap();
+    let mut target = SurfaceTarget::new(&gx, surface.unwrap(), (width, height), MSAA, DEPTH_TESTING).unwrap();
 
 
     // global pipeline
@@ -131,7 +132,7 @@ fn main() {
         .expect("failed loading image")
         .into_rgba8();*/
 
-    let image_texture = TextureLot::new_2d_with_data(&gx, (info.width, info.height), 1, DEFAULT_SRGB, None, TexUse::TEXTURE_BINDING, img_data);
+    let image_texture = TextureLot::new_2d_with_data(&gx, (info.width, info.height), 1, DEFAULT_SRGB, None, TexUse::TEXTURE_BINDING, &*img_data);
 
     // binding
     let img_binding = gx.bind(&layout, &[

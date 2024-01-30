@@ -1,7 +1,8 @@
 
 use arrayvec::ArrayVec;
-use wgpu::util::DeviceExt;
-use raw_window_handle::{HasRawWindowHandle, HasRawDisplayHandle};
+use wgpu::util::{DeviceExt, TextureDataOrder};
+use wgpu::rwh::{HasWindowHandle, HasDisplayHandle};
+use std::{sync::Arc, ops::{RangeBounds, Bound}};
 use crate::{*, error::*};
 
 
@@ -19,11 +20,12 @@ impl Wgx {
         wgpu::Instance::new(Default::default())
     }
 
-    pub async unsafe fn request_adapter<W: HasRawWindowHandle + HasRawDisplayHandle>(instance: &wgpu::Instance, window: Option<&W>)
-        -> Res<(wgpu::Adapter, Option<wgpu::Surface>)>
+    pub async fn request_adapter<W: HasWindowHandle + HasDisplayHandle + Send + Sync + 'static>(
+        instance: &wgpu::Instance, window: Option<Arc<W>>
+    )
+        -> Res<(wgpu::Adapter, Option<wgpu::Surface<'static>>)>
     {
         let surface = if let Some(win) = window {
-            // SAFETY: caller must keep window around
             Some(instance.create_surface(win).or(Err("couldn't create surface"))?)
         }
         else { None };
@@ -41,11 +43,16 @@ impl Wgx {
 
         #[cfg(target_family = "wasm")] let limits = limits.using_resolution(adapter.limits());
 
-        adapter.request_device(&wgpu::DeviceDescriptor {label: None, features, limits}, None).await.convert()
+        adapter.request_device(
+            &wgpu::DeviceDescriptor { label: None, required_features: features, required_limits: limits },
+            None,
+        ).await.convert()
     }
 
-    pub async unsafe fn new<W: HasRawWindowHandle + HasRawDisplayHandle>(window:Option<&W>, features:wgpu::Features, limits:wgpu::Limits)
-        -> Res<(Self, Option<wgpu::Surface>)>
+    pub async fn new<W: HasWindowHandle + HasDisplayHandle + Send + Sync + 'static>(
+        window:Option<Arc<W>>, features:wgpu::Features, limits:wgpu::Limits
+    )
+        -> Res<(Self, Option<wgpu::Surface<'static>>)>
     {
         let instance = Self::instance();
         let (adapter, surface) = Self::request_adapter(&instance, window).await?;
@@ -247,7 +254,6 @@ pub trait WgxQueue {
     fn queue(&self) -> &wgpu::Queue;
 
     fn write_texture<T: ReadBytes>(&self, texture:&wgpu::Texture, (x, y, w, h):(u32, u32, u32, u32), data:T) {
-        // SAFETY: copy immediately
         self.queue().write_texture(
             wgpu::ImageCopyTexture {
                 texture, mip_level: 0, origin: wgpu::Origin3d { x, y, z: 0 },
@@ -260,8 +266,24 @@ pub trait WgxQueue {
     }
 
     fn write_buffer<T: ReadBytes>(&self, buffer:&wgpu::Buffer, offset:u64, data:T) {
-        // SAFETY: copy immediately
         self.queue().write_buffer(buffer, offset, data.read_bytes());
+    }
+
+    fn staging_view<'a>(&'a self, buffer:&'a wgpu::Buffer, range: impl RangeBounds<u64>) -> Option<wgpu::QueueWriteBufferView<'a>> {
+
+        let offset = match range.start_bound() {
+            Bound::Included(start) => *start,
+            Bound::Excluded(start) => start + 1,
+            Bound::Unbounded => 0,
+        };
+
+        let size = match range.end_bound() {
+            Bound::Included(end) => end + 1,
+            Bound::Excluded(end) => *end,
+            Bound::Unbounded => buffer.size(),
+        }.checked_sub(offset)?;
+
+        self.queue().write_buffer_with(buffer, offset, wgpu::BufferSize::new(size)?)
     }
 }
 
@@ -269,8 +291,9 @@ pub trait WgxQueue {
 pub trait WgxDeviceQueue: WgxDevice + WgxQueue {
 
     fn texture_with_data<T: ReadBytes>(&self, descriptor: &TexDsc, data: T) -> wgpu::Texture {
-        // SAFETY: copy immediately
-        self.device().create_texture_with_data(self.queue(), &descriptor.into(), data.read_bytes())
+        self.device().create_texture_with_data(
+            self.queue(), &descriptor.into(), TextureDataOrder::default(), data.read_bytes(),
+        )
     }
 
     // with CommandEncoder

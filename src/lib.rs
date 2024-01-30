@@ -11,7 +11,7 @@ pub use wgpu::{
     PrimitiveState as Primitive,
     PrimitiveTopology as Topology,
     IndexFormat, Face, FrontFace, PolygonMode as Polygon,
-    util::{StagingBelt, DrawIndirect, DrawIndexedIndirect, DispatchIndirect},
+    util::{StagingBelt, DrawIndirectArgs, DrawIndexedIndirectArgs, DispatchIndirectArgs},
 };
 
 // macros
@@ -46,24 +46,8 @@ pub use buffer_helper::*;
 
 // features
 
-#[cfg(feature = "projection")]
-pub use cgmath::{self, prelude::*};
-
-#[cfg(feature = "projection")]
-mod projection;
-#[cfg(feature = "projection")]
-pub use projection::*;
-
-
-
-// glyph
-#[cfg(feature = "glyph")]
-pub use wgpu_glyph::{self, Text};
-
-#[cfg(feature = "glyph")]
-mod glyph_extension;
-#[cfg(feature = "glyph")]
-pub use glyph_extension::*;
+#[cfg(feature = "math")]
+pub mod math;
 
 
 // wgsl modules

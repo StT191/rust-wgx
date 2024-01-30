@@ -1,13 +1,12 @@
 [package]
 name = "wgx"
-version = "0.18.5"
+version = "0.19.0"
 authors = ["Stefan Tammer <st.tammer@gmail.com>"]
 edition = "2021"
 license = "MIT"
 
 [lib]
 name = "wgx"
-doctest = false
 
 
 # wgsl modules
@@ -15,37 +14,34 @@ doctest = false
 members = ["wgsl_modules", "wgsl_modules/loader", "wgsl_modules/macro"]
 
 [workspace.package]
-version = "0.18.4"
+version = "0.19.0"
 authors = ["Stefan Tammer <st.tammer@gmail.com>"]
 edition = "2021"
 license = "MIT"
 
 [workspace.dependencies]
-wgsl_modules_macro = { version = "~0.18.4", path = "wgsl_modules/macro" }
-wgsl_modules_loader = { version = "~0.18.4", path = "wgsl_modules/loader" }
+wgsl_modules_macro = { version = "~0.19.0", path = "wgsl_modules/macro" }
+wgsl_modules_loader = { version = "~0.19.0", path = "wgsl_modules/loader" }
 
 
 [features]
-projection = ["dep:cgmath"]
-glyph = ["dep:wgpu_glyph", "projection"]
+default = ["math", "wgsl_modules"]
+math = ["dep:glam"]
 wgsl_modules = ["dep:wgsl_modules"]
 wgsl_modules_loader = ["wgsl_modules", "wgsl_modules/loader"]
 
 
 [dependencies]
-wgpu = "0.18"
-wgpu-types = "0.18"
-raw-window-handle = "0.5"
+wgpu = { version = "0.19", default-features = false, features = ["wgsl"] }
+wgpu-types = "0.19"
 arrayvec = "0.7"
 
 # optional
-cgmath = { version = "0", optional = true }
-# wgpu_glyph = { version = "0.20", optional = true }
-wgpu_glyph = { git = "https://github.com/hecrj/wgpu_glyph", rev = "17de687", optional = true }
-wgsl_modules = { version = "0.18.3", path = "wgsl_modules", optional = true }
+glam = { version = "0", optional = true }
+wgsl_modules = { version = "0.19.0", path = "wgsl_modules", optional = true }
 
 
 [dev-dependencies]
-winit = { version = "0.29", features = ["rwh_05"] }
+winit = "0.29"
 pollster = "0.3"
 png = "0.17"

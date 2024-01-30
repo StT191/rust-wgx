@@ -87,13 +87,13 @@ pub trait EncoderExtension {
 
     fn compute_pass(&mut self) -> wgpu::ComputePass;
 
-    fn with_compute_pass<'a, T>(&'a mut self, handler: impl FnOnce(wgpu::ComputePass<'a>) -> T) -> T;
+    fn with_compute_pass<'a, T>(&'a mut self, handler: impl FnOnce(&mut wgpu::ComputePass<'a>) -> T) -> T;
 
     fn render_pass<'a, const S: usize>(&'a mut self, attachments: RenderAttachments<'a, S>) -> wgpu::RenderPass<'a>;
 
     fn with_render_pass<'a, const S: usize, T>(
         &'a mut self, attachments: RenderAttachments<'a, S>,
-        handler: impl FnOnce(wgpu::RenderPass<'a>) -> T
+        handler: impl FnOnce(&mut wgpu::RenderPass<'a>) -> T
     ) -> T;
 
     fn pass_bundles<'a, const S: usize>(
@@ -125,7 +125,7 @@ impl EncoderExtension for wgpu::CommandEncoder {
                 buffer,
                 layout: wgpu::ImageDataLayout {
                     offset,
-                    bytes_per_row: Some(texture.format().block_size(None).unwrap_or(0) * buffer_width),
+                    bytes_per_row: Some(texture.format().block_copy_size(None).unwrap_or(0) * buffer_width),
                     rows_per_image: Some(buffer_height),
                 }
             },
@@ -146,7 +146,7 @@ impl EncoderExtension for wgpu::CommandEncoder {
                 buffer,
                 layout: wgpu::ImageDataLayout {
                     offset,
-                    bytes_per_row: Some(texture.format().block_size(None).unwrap_or(0) * buffer_width),
+                    bytes_per_row: Some(texture.format().block_copy_size(None).unwrap_or(0) * buffer_width),
                     rows_per_image: Some(buffer_height),
                 }
             },
@@ -163,8 +163,8 @@ impl EncoderExtension for wgpu::CommandEncoder {
     }
 
 
-    fn with_compute_pass<'a, T>(&'a mut self, handler: impl FnOnce(wgpu::ComputePass<'a>) -> T) -> T {
-        handler(self.compute_pass())
+    fn with_compute_pass<'a, T>(&'a mut self, handler: impl FnOnce(&mut wgpu::ComputePass<'a>) -> T) -> T {
+        handler(&mut self.compute_pass())
     }
 
 
@@ -183,9 +183,9 @@ impl EncoderExtension for wgpu::CommandEncoder {
 
     fn with_render_pass<'a, const S: usize, T>(
         &'a mut self, attachments: RenderAttachments<'a, S>,
-        handler: impl FnOnce(wgpu::RenderPass<'a>) -> T
+        handler: impl FnOnce(&mut wgpu::RenderPass<'a>) -> T
     ) -> T {
-        handler(self.render_pass(attachments))
+        handler(&mut self.render_pass(attachments))
     }
 
 

@@ -1,4 +1,5 @@
 
+use std::sync::Arc;
 use std::{time::{Instant/*, Duration*/}};
 use pollster::FutureExt;
 use winit::{
@@ -24,11 +25,11 @@ fn main() {
     let (width, height) = (1280, 900);
 
     let event_loop = EventLoop::new().unwrap();
-    let window = Window::new(&event_loop).unwrap();
+    let window = Arc::new(Window::new(&event_loop).unwrap());
     let _ = window.request_inner_size(PhysicalSize::<u32>::from((width, height)));
     window.set_title("WgFx - Shader Program");
 
-    let (gx, surface) = unsafe {Wgx::new(Some(&window), features!(PUSH_CONSTANTS), limits!{max_push_constant_size: 4})}.block_on().unwrap();
+    let (gx, surface) = Wgx::new(Some(window.clone()), features!(PUSH_CONSTANTS), limits!{max_push_constant_size: 4}).block_on().unwrap();
     let mut target = SurfaceTarget::new(&gx, surface.unwrap(), (width, height), MSAA, DEPTH_TESTING).unwrap();
 
 
@@ -134,7 +135,7 @@ fn main() {
 
                 // draw
                 target.with_frame(None, |frame| gx.with_encoder(|encoder| {
-                    encoder.with_render_pass(frame.attachments(Some(Color::BLACK), None), |mut rpass| {
+                    encoder.with_render_pass(frame.attachments(Some(Color::BLACK), None), |rpass| {
                         rpass.set_pipeline(&pipeline);
                         rpass.set_bind_group(0, &binding, &[]);
                         rpass.set_vertex_buffer(0, vertices.slice(..));

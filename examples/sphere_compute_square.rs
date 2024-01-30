@@ -1,4 +1,5 @@
 
+use std::sync::Arc;
 use std::{time::{Instant}, mem::size_of};
 use pollster::FutureExt;
 use winit::{
@@ -6,7 +7,7 @@ use winit::{
     window::WindowBuilder, event::{Event, WindowEvent, KeyEvent, ElementState},
     keyboard::{PhysicalKey, /*KeyCode*/},
 };
-use wgx::{*, cgmath::*};
+use wgx::{*, math::*};
 
 // common
 #[path="common/world_view.rs"] #[allow(dead_code)]
@@ -25,14 +26,14 @@ fn main() {
 
   let event_loop = EventLoop::new().unwrap();
 
-  let window = WindowBuilder::new().with_transparent(true).build(&event_loop).unwrap();
+  let window = Arc::new(WindowBuilder::new().with_transparent(true).build(&event_loop).unwrap());
 
   let _ = window.request_inner_size(PhysicalSize::<u32>::from((width, height)));
   window.set_title("WgFx");
 
   let features = features!(MAPPABLE_PRIMARY_BUFFERS, POLYGON_MODE_LINE/*, MULTI_DRAW_INDIRECT*/);
 
-  let (gx, surface) = unsafe {Wgx::new(Some(&window), features, limits!{})}.block_on().unwrap();
+  let (gx, surface) = Wgx::new(Some(window.clone()), features, limits!{}).block_on().unwrap();
   let mut target = SurfaceTarget::new(&gx, surface.unwrap(), (width, height), MSAA, DEPTH_TESTING).unwrap();
 
 
@@ -63,7 +64,7 @@ fn main() {
 
   let steps = 64u32;
 
-  let wg_size = Vector3::new(8, 8, 3); // workgroup size
+  let wg_size = UVec3::new(8, 8, 3); // workgroup size
 
   let vertex_size = size_of::<Vertex>() as u64;
 
@@ -83,7 +84,7 @@ fn main() {
   let binding_cp = gx.bind(&layout, &[bind!(0, Buffer, &vertex_buffer)]);
 
   gx.with_encoder(|encoder| {
-    encoder.with_compute_pass(|mut cpass| {
+    encoder.with_compute_pass(|cpass| {
       cpass.set_pipeline(&cp_pipeline);
       cpass.set_bind_group(0, &binding_cp, &[]);
       cpass.dispatch_workgroups(steps/wg_size.x, steps/wg_size.y, 3/wg_size.z);
@@ -108,19 +109,19 @@ fn main() {
   // instance data
 
   let instance_data = [
-    Matrix4::<f32>::from_angle_y(Deg(000.0)),
-    Matrix4::<f32>::from_angle_y(Deg(090.0)),
-    Matrix4::<f32>::from_angle_y(Deg(180.0)),
-    Matrix4::<f32>::from_angle_y(Deg(270.0)),
-    Matrix4::<f32>::from_angle_y(Deg(000.0))*Matrix4::<f32>::from_angle_z(Deg(180.0)),
-    Matrix4::<f32>::from_angle_y(Deg(090.0))*Matrix4::<f32>::from_angle_z(Deg(180.0)),
-    Matrix4::<f32>::from_angle_y(Deg(180.0))*Matrix4::<f32>::from_angle_z(Deg(180.0)),
-    Matrix4::<f32>::from_angle_y(Deg(270.0))*Matrix4::<f32>::from_angle_z(Deg(180.0)),
+    Mat4::from_rotation_y(deg(000.0)),
+    Mat4::from_rotation_y(deg(090.0)),
+    Mat4::from_rotation_y(deg(180.0)),
+    Mat4::from_rotation_y(deg(270.0)),
+    Mat4::from_rotation_y(deg(000.0))*Mat4::from_rotation_z(deg(180.0)),
+    Mat4::from_rotation_y(deg(090.0))*Mat4::from_rotation_z(deg(180.0)),
+    Mat4::from_rotation_y(deg(180.0))*Mat4::from_rotation_z(deg(180.0)),
+    Mat4::from_rotation_y(deg(270.0))*Mat4::from_rotation_z(deg(180.0)),
   ];
 
   // buffers
   let indirect_buffer = gx.buffer_from_data(BufUse::INDIRECT, [
-    DrawIndirect::try_from_ranges(0..mesh_len as usize, 0..instance_data.len() as usize).unwrap(),
+    DrawIndirectArgs::try_from_ranges(0..mesh_len as usize, 0..instance_data.len() as usize).unwrap(),
   ]);
 
   let instance_buffer = gx.buffer_from_data(BufUse::VERTEX, instance_data);
@@ -130,10 +131,10 @@ fn main() {
   let (width, height) = (width as f32, height as f32);
   let mut world = WorldView::new(&gx, 10.0, 5.0, 0.1, FovProjection::window(45.0, width, height));
 
-  world.objects = Matrix4::from_scale(0.25 * height);
+  world.objects = Mat4::from_uniform_scale(0.25 * height);
   world.calc_clip_matrix();
 
-  let light_matrix = Matrix4::from_angle_x(Deg(-30.0));
+  let light_matrix = Mat4::from_rotation_x(deg(-30.0));
 
   world.light_matrix = light_matrix * world.rotation; // keep light
 
