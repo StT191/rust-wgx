@@ -1,30 +1,32 @@
-[package]
-name = "wgx"
-version = "0.22.2"
-authors = ["Stefan Tammer <st.tammer@gmail.com>"]
-edition = "2021"
-license = "MIT"
-
-[lib]
-name = "wgx"
-
-
-[workspace]
-members = ["wgsl_modules", "wgsl_modules/loader", "wgsl_modules/macro"]
-
 [workspace.package]
 version = "0.22.2"
 authors = ["Stefan Tammer <st.tammer@gmail.com>"]
 edition = "2021"
 license = "MIT"
 
+[workspace]
+members = ["wgsl_modules", "wgsl_modules/loader", "wgsl_modules/macro", "egui"]
+
 [workspace.dependencies]
 wgsl_modules = { version = "~0.22.2", path = "wgsl_modules" }
 wgsl_modules_macro = { version = "~0.22.2", path = "wgsl_modules/macro" }
 wgsl_modules_loader = { version = "~0.22.2", path = "wgsl_modules/loader" }
 naga = { version = "22", features = ["wgsl-in"] }
+platform = { version = "1.0.0", tag = "v1.0.0", git = "https://github.com/StT191/platform" }
+wgx = { path = ".", default-features = false }
 log = "0"
 anyhow = "1"
+
+
+[package]
+name = "wgx"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "wgx"
 
 
 [features]
@@ -45,10 +47,7 @@ glam = { version = "0", optional = true }
 wgsl_modules = { workspace = true, optional = true }
 
 
-# [patch."https://github.com/StT191/platform"]
-# platform = { path = "../platform" }
-
 [dev-dependencies]
-platform = { version = "1.0.0", tag = "v1.0.0", git = "https://github.com/StT191/platform", features = ["frame_timer"] }
+platform = { workspace = true, features = ["frame_timer"] }
 image = { version = "0.25", default-features = false, features = ["png"] }
 wgpu = { version = "22", default-features = false, features = ["webgpu", "webgl"] }

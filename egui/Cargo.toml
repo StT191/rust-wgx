@@ -1,0 +1,41 @@
+[package]
+name = "wgx-egui"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "wgx_egui"
+
+
+[features]
+egui = ["dep:egui", "dep:egui-winit", "dep:egui_extras"]
+
+
+[dependencies]
+platform = { workspace = true, features = ["web_clipboard"] }
+wgx = { workspace = true }
+epaint = { version = "0.29" }
+egui-wgpu = { version = "0.29" }
+
+egui = { version = "0.29", optional = true }
+egui_extras = { version = "0.29", optional = true } # without features
+
+
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+egui-winit = { version = "0.29", optional = true }
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+egui-winit = { version = "0.29", default-features = false, features = ["links"], optional = true }
+
+
+[dev-dependencies]
+platform = { workspace = true, features = ["frame_timer", "auto_wake_lock"] }
+
+# egui_extras = { version = "0.29", features = ["image"] } # with features
+# image = { version = "0.24", default-features = false, features = ["png"] }
+
+
+[target.'cfg(target_family = "wasm")'.dev-dependencies]
+wgpu = { version = "22", default-features = false, features = ["webgpu", "webgl"] }
