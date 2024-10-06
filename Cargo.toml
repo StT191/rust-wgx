@@ -5,7 +5,7 @@ edition = "2021"
 license = "MIT"
 
 [workspace]
-members = ["wgsl_modules", "wgsl_modules/loader", "wgsl_modules/macro", "egui"]
+members = ["wgsl_modules", "wgsl_modules/loader", "wgsl_modules/macro", "egui", "iced"]
 
 [workspace.dependencies]
 wgsl_modules = { version = "~0.22.2", path = "wgsl_modules" }

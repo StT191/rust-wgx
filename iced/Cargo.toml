@@ -1,0 +1,36 @@
+[package]
+name = "wgx-iced"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "wgx_iced"
+
+
+[dependencies]
+platform = { branch = "winit-iced", git = "https://github.com/StT191/platform", features = ["web_clipboard"] }
+wgx = { workspace = true }
+
+# iced_winit = { version = "0.14-dev" }
+iced_winit = { rev = "c217500", git = "https://github.com/iced-rs/iced" }
+# iced_wgpu = { version = "0.14-dev" }
+iced_wgpu = { rev = "c217500", git = "https://github.com/iced-rs/iced" }
+
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+web-sys = { version = "0.3", features = ["Navigator", "Clipboard", "ClipboardEvent", "DataTransfer"] }
+
+
+[dev-dependencies]
+platform = { branch = "winit-iced", git = "https://github.com/StT191/platform", features = ["frame_timer", "auto_wake_lock"]}
+
+# iced_widget = { version = "0.14-dev", features = ["canvas", "wgpu"] }
+iced_widget = { rev = "c217500", git = "https://github.com/iced-rs/iced", features = ["canvas", "wgpu"] }
+# iced_wgpu = { version = "0.14-dev", features = ["geometry"] }
+iced_wgpu = { rev = "c217500", git = "https://github.com/iced-rs/iced", features = ["geometry"] }
+
+
+[target.'cfg(target_family = "wasm")'.dev-dependencies]
+wgpu = { version = "22", default-features = false, features = ["webgpu", "webgl"] }
